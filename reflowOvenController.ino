@@ -1,9 +1,9 @@
 /*******************************************************************************
 * Title: Reflow Oven Controller
 * Version: 1.20
-* Date: 26-11-2012
+* Date: 11/12/2013
 * Company: Rocket Scream Electronics
-* Author: Lim Phang Moh
+* Author: Lim Phang Moh modified by Albert R Tejera
 * Website: www.rocketscream.com
 * 
 * Brief
