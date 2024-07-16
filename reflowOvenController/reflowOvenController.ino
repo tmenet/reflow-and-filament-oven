@@ -292,7 +292,7 @@ void setup()
   pinMode(switch2Pin, INPUT);
 #endif	
 
-  // Start-up splash
+  // Start-up splash ****************************************************************
   digitalWrite(buzzerPin, HIGH);
   lcd.begin(8, 2);
   lcd.createChar(0, degree);
@@ -309,7 +309,7 @@ void setup()
   delay(5000);
   lcd.clear();
 
-  // Serial communication at 57600 bps
+  // Serial communication at 57600 bps ************************************************
   Serial.begin(57600);
 
   // Turn off LED (active low)
@@ -330,7 +330,7 @@ void loop()
   // Current time
   unsigned long now;
 
-  // Time to read thermocouple?
+  // Time to read thermocouple? ***********************************************
   if (millis() > nextRead)
   {
     // Read thermocouple next sampling period
@@ -356,7 +356,8 @@ void loop()
       }
   }
 
-  if (millis() > nextCheck)
+// count off seconds *****************************************************
+  if (millis() > nextCheck) 
   {
     // Check input in the next seconds
     nextCheck += 1000;
@@ -384,7 +385,7 @@ void loop()
 
     // Clear LCD
     lcd.clear();
-    // Print current system state
+    // Print current system state ******************************************************
     lcd.print(lcdMessagesReflowStatus[reflowState]);
     // Move the cursor to the 2 line
     lcd.setCursor(0, 1);
@@ -397,7 +398,7 @@ void loop()
     }
     else
     {
-      // Print current temperature
+      // Print current temperature ******************************************************
       lcd.print(input);
 
 #if ARDUINO >= 100
@@ -411,10 +412,10 @@ void loop()
     }
   }
 
-  // Reflow oven controller state machine
+  // Reflow oven controller state machine  *********************************************
   switch (reflowState)
   {
-  case REFLOW_STATE_IDLE:
+  case REFLOW_STATE_IDLE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // If oven temperature is still above room temperature don't allow start reflow
     if (input >= TEMPERATURE_ROOM)
     {
@@ -444,7 +445,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_PREHEAT:
+  case REFLOW_STATE_PREHEAT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     reflowStatus = REFLOW_STATUS_ON;
     // If minimum soak temperature is achieve       
     if (input >= TEMPERATURE_SOAK_MIN)
@@ -460,7 +461,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_SOAK:     
+  case REFLOW_STATE_SOAK:    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
     // If micro soak temperature is achieved       
     if (millis() > timerSoak)
     {
@@ -479,7 +480,7 @@ void loop()
     }
     break; 
 
-  case REFLOW_STATE_REFLOW:
+  case REFLOW_STATE_REFLOW: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // We need to avoid hovering at peak temperature for too long
     // Crude method that works like a charm and safe for the components
     if (input >= (TEMPERATURE_REFLOW_MAX - 5))
@@ -493,7 +494,7 @@ void loop()
     }
     break;   
 
-  case REFLOW_STATE_COOL:
+  case REFLOW_STATE_COOL: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // If minimum cool temperature is achieve       
     if (input <= TEMPERATURE_COOL_MIN)
     {
@@ -511,7 +512,7 @@ void loop()
     }         
     break;    
 
-  case REFLOW_STATE_COMPLETE:
+  case REFLOW_STATE_COMPLETE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     if (millis() > buzzerPeriod)
     {
       // Turn off buzzer and green LED
@@ -524,7 +525,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_TOO_HOT:
+  case REFLOW_STATE_TOO_HOT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // If oven temperature drops below room temperature
     if (input < TEMPERATURE_ROOM)
     {
@@ -553,7 +554,7 @@ void loop()
     break;    
   }    
 
-  // If switch 1 is pressed
+  // If switch 1 is pressed // **************************************************
   if (switchStatus == SWITCH_1)
   {
     // If currently reflow process is on going
@@ -571,7 +572,7 @@ void loop()
   // switch supported))
   switch (debounceState)
   {
-  case DEBOUNCE_STATE_IDLE:
+  case DEBOUNCE_STATE_IDLE: // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // No valid switch press
     switchStatus = SWITCH_NONE;
     // If switch #1 is pressed
@@ -588,7 +589,7 @@ void loop()
       }	
     break;
 
-  case DEBOUNCE_STATE_CHECK:
+  case DEBOUNCE_STATE_CHECK:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #ifdef	USE_MAX6675
     // If switch #1 is still pressed
     if (digitalRead(switch1Pin) == LOW)
@@ -611,7 +612,7 @@ void loop()
       }
     break;
 
-  case DEBOUNCE_STATE_RELEASE:
+  case DEBOUNCE_STATE_RELEASE:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #ifdef	USE_MAX6675	
     if (digitalRead(switch1Pin) == HIGH)
 #else
@@ -626,7 +627,7 @@ void loop()
     break;
   }
 
-  // PID computation and SSR control
+  // PID computation and SSR control // ***********************************************
   if (reflowStatus == REFLOW_STATUS_ON)
   {
     now = millis();
