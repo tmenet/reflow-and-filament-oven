@@ -78,6 +78,7 @@
  *
  * Revision  Description
  * ========  ===========
+ * 1.4       Added Filament Dryer feature and changed splas to indicate Multi Oven and prompt for a choice
  * 1.3       Changed hardware defines for breadboard with 16X2 LCD and added profile for LEAD solder
  * 1.20			Adds supports for v1.60 (and above) of Reflow Oven Controller 
  *           Shield:
@@ -304,7 +305,7 @@ void setup()
   lcd.print("LEAD Profile");
   #endif
   lcd.setCursor(0, 1);
-  lcd.print("Reflow Oven 1.3");
+  lcd.print("Multi Oven 1.4");
   digitalWrite(buzzerPin, LOW);
   delay(5000);
   lcd.clear();
@@ -415,7 +416,7 @@ void loop()
   // Reflow oven controller state machine  *********************************************
   switch (reflowState)
   {
-  case REFLOW_STATE_IDLE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_IDLE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // If oven temperature is still above room temperature don't allow start reflow
     if (input >= TEMPERATURE_ROOM)
     {
@@ -445,7 +446,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_PREHEAT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_PREHEAT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     reflowStatus = REFLOW_STATUS_ON;
     // If minimum soak temperature is achieve       
     if (input >= TEMPERATURE_SOAK_MIN)
@@ -461,7 +462,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_SOAK:    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+  case REFLOW_STATE_SOAK:    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  xxx
     // If micro soak temperature is achieved       
     if (millis() > timerSoak)
     {
@@ -480,7 +481,7 @@ void loop()
     }
     break; 
 
-  case REFLOW_STATE_REFLOW: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_REFLOW: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // We need to avoid hovering at peak temperature for too long
     // Crude method that works like a charm and safe for the components
     if (input >= (TEMPERATURE_REFLOW_MAX - 5))
@@ -494,7 +495,7 @@ void loop()
     }
     break;   
 
-  case REFLOW_STATE_COOL: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_COOL: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // If minimum cool temperature is achieve       
     if (input <= TEMPERATURE_COOL_MIN)
     {
@@ -512,7 +513,7 @@ void loop()
     }         
     break;    
 
-  case REFLOW_STATE_COMPLETE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_COMPLETE: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     if (millis() > buzzerPeriod)
     {
       // Turn off buzzer and green LED
@@ -525,7 +526,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_TOO_HOT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case REFLOW_STATE_TOO_HOT: //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // If oven temperature drops below room temperature
     if (input < TEMPERATURE_ROOM)
     {
@@ -534,7 +535,7 @@ void loop()
     }
     break;
 
-  case REFLOW_STATE_ERROR:
+  case REFLOW_STATE_ERROR:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // If thermocouple problem is still present
 #ifdef	USE_MAX6675
     if (isnan(input))
@@ -572,7 +573,7 @@ void loop()
   // switch supported))
   switch (debounceState)
   {
-  case DEBOUNCE_STATE_IDLE: // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case DEBOUNCE_STATE_IDLE: // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
     // No valid switch press
     switchStatus = SWITCH_NONE;
     // If switch #1 is pressed
@@ -589,7 +590,7 @@ void loop()
       }	
     break;
 
-  case DEBOUNCE_STATE_CHECK:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case DEBOUNCE_STATE_CHECK:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
 #ifdef	USE_MAX6675
     // If switch #1 is still pressed
     if (digitalRead(switch1Pin) == LOW)
@@ -612,7 +613,7 @@ void loop()
       }
     break;
 
-  case DEBOUNCE_STATE_RELEASE:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  case DEBOUNCE_STATE_RELEASE:  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
 #ifdef	USE_MAX6675	
     if (digitalRead(switch1Pin) == HIGH)
 #else
