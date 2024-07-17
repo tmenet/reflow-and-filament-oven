@@ -91,6 +91,8 @@
  * 1.10      Arduino IDE 1.0 compatible.
  * 1.00      Initial public release.
  *******************************************************************************/
+
+
 // Comment either one the following #define to select your board revision
 // Newer board version starts from v1.60 using MAX31855KASA+ chip 
 #define  USE_MAX31855
@@ -182,6 +184,50 @@ debounceState_t;
 #define PID_KI_REFLOW 0.05
 #define PID_KD_REFLOW 350
 #define PID_SAMPLE_TIME 1000
+
+//  PLA (Polylactic Acid)
+// Temperature: 40-45°C (104-113°F)
+// Time: 4-6 hours
+
+// ABS (Acrylonitrile Butadiene Styrene)
+// Temperature: 80-85°C (176-185°F)
+// Time: 2-4 hours
+
+// PETG (Polyethylene Terephthalate Glycol)
+// Temperature: 65-70°C (149-158°F)
+// Time: 4-6 hours
+
+// TPU (Thermoplastic Polyurethane)
+// Temperature: 40-50°C (104-122°F)
+// Time: 4-6 hours
+
+// Nylon
+// Temperature: 70-90°C (158-194°F)
+// Time: 8-12 hours
+
+// PC (Polycarbonate)
+// Temperature: 80-100°C (176-212°F)
+// Time: 6-8 hours
+
+// PVA (Polyvinyl Alcohol)
+// Temperature: 45-55°C (113-131°F)
+// Time: 4-6 hours
+
+// HIPS (High Impact Polystyrene)
+// Temperature: 65-75°C (149-167°F)
+// Time: 3-5 hours
+
+// PEEK (Polyether Ether Ketone)
+// Temperature: 120-150°C (248-302°F)
+// Time: 4-6 hours
+
+// ASA (Acrylonitrile Styrene Acrylate)
+// Temperature: 80-85°C (176-185°F)
+// Time: 4-6 hours
+
+// PP (Polypropylene)
+// Temperature: 80-100°C (176-212°F)
+// Time: 4-6 hours
 
 // ***** LCD MESSAGES *****
 const char* lcdMessagesReflowStatus[] = {
