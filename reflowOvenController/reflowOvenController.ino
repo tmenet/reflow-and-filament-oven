@@ -181,7 +181,7 @@ typedef enum FILAMENT_STATE {
   FILAMENT_STATE_COOL,
   FILAMENT_STATE_COMPLETE,
   FILAMENT_STATE_TOO_HOT,
-   FILAMENT_STATE_IDLE,
+  FILAMENT_STATE_IDLE,
   FILAMENT_STATE_ERROR
 } filamentState_t;
 
@@ -224,6 +224,10 @@ typedef enum DEBOUNCE_STATE {
 #define DEBOUNCE_PERIOD_MIN 50
 
 // ***** PID PARAMETERS *****
+//****** Filament *********
+#define PID_KP_FIL 100
+#define PID_KI_FIL 0.05
+#define PID_KD_FIL 600
 // ***** PRE-HEAT STAGE *****
 #define PID_KP_PREHEAT 100
 #define PID_KI_PREHEAT 0.025
@@ -244,7 +248,7 @@ typedef enum FLMT_TYPE {
   ABS,
   PETG,
   TPU,
-  Nylon,
+  Nyln,
   PC,
   PVA,
   HIPS,
@@ -254,8 +258,8 @@ typedef enum FLMT_TYPE {
 
 } flmtType_t;
 
-char flmtName[11][6] = { "PLA", "ABS", "PETG", "TPU", "Nylon", "PC", "PVA", "HIPS", "PEEK", "ASA", "PP" };
-int flmtTemp[11] = { 45, 85, 70, 50, 90, 100, 55, 75, 150, 85, 100 };
+char flmtName[11][6] = { "PLA", "ABS", "PETG", "TPU", "Nyln", "PC", "PVA", "HIPS", "PEEK", "ASA", "PP" };
+int flmtTemp[11] = { 40, 80, 65, 45, 75, 90, 45, 65, 120, 75, 85 };
 int flmtHours[11] = { 6, 4, 6, 6, 12, 8, 6, 5, 6, 6, 6 };
 
 // ***** LCD MESSAGES *****
@@ -272,11 +276,11 @@ const char* lcdMessagesReflowStatus[] = {
 
 
 const char* lcdMessagesfilamentStatus[] = {
-"On",
-"Cool",
-"Complete",
-"Wait,HOT",
-"Idle"
+  "On",
+  "Cool",
+  "Done",
+  "HOT",
+  "Idle"
 };
 
 // ***** DEGREE SYMBOL FOR LCD *****
@@ -338,12 +342,12 @@ long lastDebounceTime;
 // Switch press status
 switch_t switchStatus;
 // Seconds timer
-int timerSeconds;
+long int timerSeconds;
 // menu state points to filamentType
 int flmtTypeCount = 0;
 int menuState = 0;
 bool exitMenu = 0;
-int secondsTimer;
+long int secondsTimer;
 // Specify PID control interface
 PID reflowOvenPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 // Specify LCD interface
@@ -385,10 +389,12 @@ void setup() {
   lcd.clear();
 
 
-//  **************************** SELECTION MENU **************************************************************************
+  //  **************************** SELECTION MENU **************************************************************************
   lcd.setCursor(0, 1);
   lcd.print("<Filmnt Reflow> ");
-
+  digitalWrite(buzzerPin, HIGH);
+  delay(500);
+  digitalWrite(buzzerPin, LOW);
   while ((analogRead(leftswitch)) && (analogRead(rightswitch))) {
     delay(100);
     if (!analogRead(leftswitch)) {
@@ -408,7 +414,7 @@ void setup() {
   lcd.clear();
   lcd.setCursor(0, 1);
   lcd.print("<     PLA     >");
-// ***********************************  FILAMENT SELECTION **********************************************************************
+  // ***********************************  FILAMENT SELECTION **********************************************************************
   if (ovenState == FILAMENT_OVEN) {  // letrs select the filament parameters
 
     flmtTypeCount = 0;
@@ -454,8 +460,8 @@ void setup() {
       }
     }
 
-    secondsTimer = 300;//flmtHours[flmtTypeCount] * 3600;
-    setpoint = 80; //flmtTemp[flmtTypeCount];
+    secondsTimer = (long int)flmtHours[flmtTypeCount] * 3600;
+    setpoint = flmtTemp[flmtTypeCount]; 
 
     lcd.setCursor(0, 0);
     lcd.print(secondsTimer / 3600);
@@ -464,6 +470,12 @@ void setup() {
     lcd.print(" C");
     lastmillis = millis();
     delay(3000);
+
+    // Tell the PID to range between 0 and the full window size
+    reflowOvenPID.SetOutputLimits(0, 2000);
+    reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
+    // Turn the PID on
+    reflowOvenPID.SetMode(AUTOMATIC);
   }
 
   // Serial communication at 57600 bps ************************************************
@@ -531,134 +543,136 @@ void loop() {
       lcd.print(lcdMessagesReflowStatus[reflowState]);
       // Move the cursor to the 2 line
       lcd.setCursor(0, 1);
-      if (ovenState == FILAMENT_OVEN) {
-        // If currently in error state
-        if (reflowState == REFLOW_STATE_ERROR) {
-          // No thermocouple wire connected
-          lcd.print("TC Error!");
-        } else {
-          // Print current temperature ******************************************************
-          lcd.print(input);  // temperature was loaded into input
+
+      // If currently in error state
+      if (reflowState == REFLOW_STATE_ERROR) {
+        // No thermocouple wire connected
+        lcd.print("TC Error!");
+      }
+      // Print current temperature ******************************************************
+      lcd.print(input);  // temperature was loaded into input
 
 #if ARDUINO >= 100
-          // Print degree Celsius symbol
-          lcd.write((uint8_t)0);
-#else
-          // Print degree Celsius symbol
-          lcd.print(0, BYTE);
-#endif
-          lcd.print("C ");
-        }
-      }
-    }
-
-    // *****************FILAMENT OUTPUT *********************************************************
-    if (millis() > lastmillis + 1000) {
-      lastmillis = millis();
-
-      lcd.print("                ");
-      lcd.setCursor(0, 0);
-      lcd.print((double)(secondsTimer - timerSeconds) / 3600);
-      lcd.print(" Hrs ");
-      lcd.print(input);
       // Print degree Celsius symbol
       lcd.write((uint8_t)0);
-      lcd.print("C");
+#else
+      // Print degree Celsius symbol
+      lcd.print(0, BYTE);
+#endif
+      lcd.print("C ");
+    } else {
 
-      if (filamentState = FILAMENT_STATE_ON) {
-              lcd.setCursor(1, 1);
-        lcd.print(lcdMessagesfilamentStatus[reflowState]);
-      }
+      // *****************FILAMENT OUTPUT *********************************************************
+      if (millis() > lastmillis + 1000) {
+        lastmillis = millis();
 
+        lcd.print("                ");
+        lcd.setCursor(0, 0);
+        lcd.print((double)(secondsTimer - timerSeconds) / 3600);
+        lcd.print("Hrs ");
+        lcd.print(input);
+        // Print degree Celsius symbol
+        lcd.write((uint8_t)0);
+        lcd.print("C");
 
-
-
-      // *****************************************FILAMENT STATE Machine ***************************************************************************************************************
-      switch (filamentState) {
-
-        case FILAMENT_STATE_ON:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
-          reflowStatus = REFLOW_STATUS_ON;
-          reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
-          // Ramp down to minimum cooling temperature
-          if (timerSeconds == secondsTimer) {
-            // Proceed to cooling state
-            filamentState = FILAMENT_STATE_COOL;
-            setpoint = 0;
-          }
-
-          break;
-
-        case FILAMENT_STATE_COOL:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
-          setpoint = TEMPERATURE_COOL_MIN;
-          // If minimum cool temperature is achieve
-          if (input <= TEMPERATURE_COOL_MIN) {
-            // Retrieve current time for buzzer usage
-            buzzerPeriod = millis() + 1000;
-            // Turn on buzzer and green LED to indicate completion
-
-            digitalWrite(buzzerPin, HIGH);
-            // Turn off reflow process
-            reflowStatus = REFLOW_STATUS_OFF;
-            // Proceed to reflow Completion state
-            filamentState = FILAMENT_STATE_COMPLETE;
-          }
-          break;
-
-        case FILAMENT_STATE_COMPLETE:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
-          if (millis() > buzzerPeriod) {
-            // Turn off buzzer and green LED
-            digitalWrite(buzzerPin, LOW);
-
-            // Reflow process ended
-            filamentState = FILAMENT_STATE_IDLE;
-          }
-          break;
-
-        case FILAMENT_STATE_TOO_HOT:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
-          // If oven temperature drops below room temperature
-          if (input < TEMPERATURE_ROOM) {
-            // Ready to reflow
-            filamentState = FILAMENT_STATE_IDLE;
-          }
-          break;
-        case FILAMENT_STATE_IDLE:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
-          // If oven temperature is still above room temperature don't allow start reflow
-          if (input >= TEMPERATURE_ROOM) {
-            filamentState = FILAMENT_STATE_TOO_HOT;
-          } else {
-            // If switch is pressed to start filament  process
-            while (!exitMenu) {
-              // tests to exit menu
-              if (!analogRead(upswitch)) {
-                delay(100);
-                if (!analogRead(upswitch)) exitMenu = 1;
-              }
-              if (!analogRead(downswitch)) {
-                delay(100);
-                if (!analogRead(downswitch)) exitMenu = 1;
-              }
-            }
-            // If switch is pressed to start reflow process
-
-            Serial.println("Time Setpoint Input Output");
-            // Intialize seconds timer for serial debug information
-            timerSeconds = 0;
-            // Initialize PID control window starting time
-            windowStartTime = millis();
-            // Ramp up to minimum soaking temperature
-            setpoint = TEMPERATURE_SOAK_MIN;
-            // Tell the PID to range between 0 and the full window size
-            reflowOvenPID.SetOutputLimits(0, windowSize);
-            reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
-            // Turn the PID on
-            reflowOvenPID.SetMode(AUTOMATIC);
-            // Proceed to preheat stage
-            filamentState = FILAMENT_STATE_ON;
-          }
-          break;
+        //if (filamentState = FILAMENT_STATE_ON) {
+          lcd.setCursor(11,1);
+          lcd.print(lcdMessagesfilamentStatus[filamentState]);
+       // }
       }
     }
-  } else  //we are a reflow oven
+
+    // *****************************************FILAMENT STATE Machine ***************************************************************************************************************
+    switch (filamentState) {
+
+      case FILAMENT_STATE_ON:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
+        reflowStatus = REFLOW_STATUS_ON;
+        reflowOvenPID.SetTunings(PID_KP_FIL, PID_KI_FIL, PID_KD_FIL);
+        // Ramp down to minimum cooling temperature
+        if (timerSeconds >= secondsTimer) {
+          // Proceed to cooling state
+          filamentState = FILAMENT_STATE_COOL;
+          setpoint = 0;
+        }
+
+        break;
+
+      case FILAMENT_STATE_COOL:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
+        setpoint = 0;
+        // If minimum cool temperature is achieve
+        if (input <= TEMPERATURE_COOL_MIN) {
+          // Retrieve current time for buzzer usage
+          buzzerPeriod = millis() + 1000;
+          // Turn on buzzer and green LED to indicate completion
+
+          digitalWrite(buzzerPin, HIGH);
+          // Turn off reflow process
+          // reflowStatus = REFLOW_STATUS_OFF;
+          // Proceed to reflow Completion state
+          filamentState = FILAMENT_STATE_COMPLETE;
+        }
+        break;
+
+      case FILAMENT_STATE_COMPLETE:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
+        setpoint = 0;
+        if (millis() > buzzerPeriod) {
+          // Turn off buzzer and green LED
+          digitalWrite(buzzerPin, LOW);
+
+          // Reflow process ended
+          filamentState = FILAMENT_STATE_IDLE;
+        }
+        break;
+
+      case FILAMENT_STATE_TOO_HOT:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
+        setpoint = 0;
+        // If oven temperature drops below room temperature
+        if (input < TEMPERATURE_ROOM) {
+          // Ready to reflow
+          filamentState = FILAMENT_STATE_IDLE;
+        }
+        break;
+      case FILAMENT_STATE_IDLE:  //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< xxx
+        // If oven temperature is still above room temperature don't allow start reflow
+        setpoint = 0;
+        if (input >= TEMPERATURE_ROOM) {
+          filamentState = FILAMENT_STATE_TOO_HOT;
+        } 
+        // else {
+        //   // If switch is pressed to start filament  process
+        //   while (!exitMenu) {
+        //     // tests to exit menu
+        //     if (!analogRead(upswitch)) {
+        //       delay(100);
+        //       if (!analogRead(upswitch)) exitMenu = 1;
+        //     }
+        //     if (!analogRead(downswitch)) {
+        //       delay(100);
+        //       if (!analogRead(downswitch)) exitMenu = 1;
+        //     }
+        //   }
+        //   // If switch is pressed to start reflow process
+
+        //   Serial.println("Time Setpoint Input Output");
+        //   // Intialize seconds timer for serial debug information
+        //   timerSeconds = 0;
+        //   // Initialize PID control window starting time
+        //   windowStartTime = millis();
+        //   // Ramp up to minimum soaking temperature
+        //   setpoint = TEMPERATURE_SOAK_MIN;
+        //   // Tell the PID to range between 0 and the full window size
+        //   reflowOvenPID.SetOutputLimits(0, windowSize);
+        //   reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
+        //   // Turn the PID on
+        //   reflowOvenPID.SetMode(AUTOMATIC);
+          // Proceed to preheat stage
+          //filamentState = FILAMENT_STATE_ON;
+        //}
+        break;
+    }
+  }
+
+  else  //we are a reflow oven
 
   {
     // Reflow oven controller state machine  ********************************************************************************************************************** REFLOW OVEN STATE MACHINE
